@@ -12,6 +12,7 @@ import * as Util from './utils';
 // Any potential data labels should go here
 export const DATE = "DATE";
 export const TODO = "TODO";
+export const CHECKBOX = "CHECKBOX";
 
 interface IContextData {
     dataLabel: string,
@@ -36,9 +37,14 @@ export default function getCursorContext(textEditor: TextEditor, edit: TextEdito
         }
     }
 
+    const checkboxRegexp = /^[ \t]*-?[ \t]*\[([ xXoO\-<>vV\/])\]/;
+    match = checkboxRegexp.exec(curLine);
+    if (match) {
+        return getCheckboxContext(match, cursorPos);
+    }
+
     // Match for TODO (or absence)
     const todoKeywords = Util.getKeywords().join("|");
-    // const todoWords = "TODO|DONE";
     const todoHeaderRegexp = new RegExp(`^(\\s*\\*+\\s+)(${todoKeywords})(?:\\b|\\[|$)`);
     match = todoHeaderRegexp.exec(curLine);
     if (match) {
@@ -47,6 +53,23 @@ export default function getCursorContext(textEditor: TextEditor, edit: TextEdito
     }
 
     return undefined;
+}
+
+function getCheckboxContext(match: RegExpExecArray, cursorPos: Position): IContextData {
+    const line = cursorPos.line;
+
+    const startPos = new Position(line, match.index);
+    const endPos = new Position(line, match.index + match[0].length);
+    const range = new Range(startPos, endPos);
+
+    if (range.container(cursorPos)) {
+        return {
+            data: match[0],
+            dataLabel: CHECKBOX,
+            line,
+            range
+        }
+    }
 }
 
 function getTimestampContext(match: RegExpExecArray, cursorPos: Position): IContextData {

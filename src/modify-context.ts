@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import getCursorContext, { DATE, TODO } from './cursor-context';
+import getCursorContext, { DATE, TODO, CHECKBOX } from './cursor-context';
 import * as Datetime from './simple-datetime';
 import nextTodo from './todo-switch';
 
@@ -9,6 +9,8 @@ export const DOWN = "DOWN";
 // If any new contexts are created (Such as TODO), switch for the dataLabel here
 function modifyContext(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, action: string) {
     const ctx = getCursorContext(textEditor, edit);
+
+    const checkboxStates = [' ', 'X', 'O', '/', '<', '>', 'V', '-'];
 
     if (!ctx) {
         vscode.window.showErrorMessage("No context to modify");
@@ -31,6 +33,10 @@ function modifyContext(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdi
             }
             edit.replace(ctx.range, newTodoString);
             break;
+        case CHECKBOX:
+            const index = checkboxStates.indexOf(ctx.data.toUpper());
+            const newState = index !== -1 ? checkboxStates[(index + 1) % checkboxStates.length] : " ";
+            edit.replace(ctx.range, newState);
     }
 }
 
